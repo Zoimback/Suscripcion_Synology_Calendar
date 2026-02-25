@@ -1,0 +1,25 @@
+{
+  "caldav": {
+    "url": "https://tu-synology.com:5001/caldav/",
+    "username": "tu_usuario",
+    "password": "tu_contraseña_segura"
+  },
+  "calendarios": [
+    {
+      "nombre": "Universidad",
+      "url_ics": "https://ejemplo.com/calendario-universidad.ics"
+    },
+    {
+      "nombre": "Trabajo",
+      "url_ics": "https://calendar.google.com/calendar/ical/tu_email%40gmail.com/private-xxx/basic.ics"
+    },
+    {
+      "nombre": "Deportes - Fórmula 1",
+      "url_ics": "https://files-f1.motorsportcalendars.com/es/f1-calendar_qualifying_sprint_gp.ics"
+    },
+    {
+      "nombre": "Festivos España",
+      "url_ics": "https://ejemplo.com/festivos-españa.ics"
+    }
+  ]
+}
