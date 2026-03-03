@@ -1,196 +1,233 @@
-# 📅 Synology Calendar Sync
+# Synology Calendar ICS Sync
 
-Sistema automático de sincronización de calendarios desde URLs ICS a Synology CalDAV.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 📋 Descripción
-
-Este proyecto sincroniza automáticamente eventos desde múltiples fuentes de calendarios ICS (Google Calendar, calendarios deportivos, eventos universitarios, etc.) hacia tu servidor Synology CalDAV. Ideal para centralizar todos tus calendarios en un único lugar con actualizaciones automáticas cada 15 minutos.
+Utilidad para sincronizar calendarios externos (feeds ICS/iCal) con **Synology Calendar** vía CalDAV. Diseñado específicamente para manejar las peculiaridades de Synology DSM y Google Calendar.
 
 ## ✨ Características
 
-- 🔄 **Sincronización automática** desde múltiples URLs ICS
-- 📱 **Multi-calendario**: Soporta ilimitados calendarios de origen
-- 🇪🇸 **Zona horaria**: Conversión automática a Europe/Madrid
-- ⏰ **Alarmas inteligentes**: 15 y 5 minutos antes de cada evento
-- 🚀 **Solo eventos futuros**: Ignora automáticamente eventos pasados
-- 🔍 **Detección de duplicados**: Usa UID para evitar eventos duplicados
-- 🔄 **Actualización inteligente**: Solo modifica eventos que cambien
-- 📊 **Logging detallado**: Información clara del proceso de sincronización
-- 🔒 **Seguro**: Credenciales protegidas en archivo local no versionado
+- ✅ **Sincronización automática** de múltiples feeds ICS
+- ✅ **Creación inteligente de calendarios** usando DSM API (visibles en la interfaz web)
+- ✅ **Soporte completo para eventos recurrentes** (RRULE + RECURRENCE-ID)
+- ✅ **Manejo de quirks de Google Calendar** (UIDs modificados, masters duplicados)
+- ✅ **Reintentos automáticos** con backoff exponencial
+- ✅ **Modo dry-run** para pruebas seguras
+- ✅ **Logging completo** a archivo y consola
 
-## 🛠️ Requisitos
+## 🚀 Inicio Rápido
 
-- Python 3.8+
-- Servidor Synology con CalDAV habilitado
-- Acceso a internet para descargar calendarios ICS
+### Instalación
 
-## 📦 Instalación
-
-1. **Clonar el repositorio:**
 ```bash
+# Clonar repositorio
 git clone https://github.com/Zoimback/Suscripcion_Synology_Calendar.git
 cd Suscripcion_Synology_Calendar
-```
 
-2. **Crear entorno virtual (recomendado):**
-```bash
-python -m venv venv
+# Crear entorno virtual
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
 
-# Windows
-.\venv\Scripts\activate
-
-# Linux/Mac
-source venv/bin/activate
-```
-
-3. **Instalar dependencias:**
-```bash
+# Instalar dependencias
 pip install -r requirements.txt
 ```
 
-## ⚙️ Configuración
+### Configuración
 
-1. **Crear archivo de configuración:**
+Copia el template y edita con tus datos:
+
 ```bash
-cp events.json.example events.json
+cp skills/synology-calendar-ics-sync/references/config-template.json config.json
 ```
 
-2. **Editar `events.json` con tus datos:**
+Ejemplo de `config.json`:
+
 ```json
 {
   "caldav": {
-    "url": "https://tu-synology.com:5001/caldav/",
+    "url": "https://tu-nas.example.com:5001/caldav/Usuario/",
     "username": "tu_usuario",
-    "password": "tu_contraseña"
+    "password": "tu_contraseña",
+    "verify_ssl": false
   },
-  "calendarios": [
+  "sources": [
     {
-      "nombre": "Mi Calendario",
-      "url_ics": "https://ejemplo.com/calendario.ics"
+      "calendar_name": "Fórmula 1",
+      "url": "https://ejemplo.com/f1-calendar.ics",
+      "delete_removed_events": true
     }
-  ]
+  ],
+  "log_file": "/volume1/scripts/ics-sync/sync.log"
 }
 ```
 
-### 📝 Notas de configuración:
+### Uso
 
-- **URL CalDAV**: Típicamente `https://tu-nas:5001/caldav/` o `http://tu-nas:5000/caldav/`
-- **URLs ICS**: Reemplaza `webcal://` por `https://` si es necesario
-- **Múltiples calendarios**: Añade más objetos al array `calendarios`
-
-## 🚀 Uso
-
-### Ejecución manual:
 ```bash
-python main.py
+# Sincronizar todos los calendarios
+python sync_ics_to_caldav.py
+
+# Modo dry-run (sin escribir cambios)
+python sync_ics_to_caldav.py --dry-run
+
+# Logging detallado
+python sync_ics_to_caldav.py --verbose
 ```
 
-### Ejecución automática (cada 15 minutos):
+## 📦 Estructura del Proyecto
 
-**Windows - Programador de Tareas:**
-1. Abrir "Programador de tareas"
-2. Crear tarea básica
-3. Desencadenador: Cada 15 minutos
-4. Acción: `python` con argumento `C:\ruta\completa\main.py`
+```
+.
+├── ics_sync/              # Módulo principal
+│   ├── cli.py            # Entry point CLI
+│   ├── sync.py           # Motor de sincronización
+│   ├── dsm_client.py     # Cliente DSM API
+│   ├── caldav_helpers.py # Utilidades CalDAV
+│   ├── grouping.py       # Agrupación de eventos recurrentes
+│   ├── fetcher.py        # Descarga de feeds ICS
+│   └── logging_.py       # Configuración de logging
+├── tests/                 # Test suite
+│   ├── unit/             # Tests unitarios
+│   └── integration/      # Tests de integración
+├── skills/                # Documentación de desarrollo
+└── sync_ics_to_caldav.py # Script de compatibilidad
+```
 
-**Linux/Mac - Cron:**
+## 🔧 Características Avanzadas
+
+### Eventos Recurrentes
+
+Maneja correctamente:
+- Eventos con `RRULE` (reglas de recurrencia)
+- Excepciones (`RECURRENCE-ID`)
+- Split series de Google Calendar
+- Huérfanos (solo overrides sin master)
+
+### DSM API vs CalDAV
+
+⚠️ **Importante:** Los calendarios creados con `caldav.make_calendar()` son **invisibles** en Synology Calendar UI.
+
+**Solución:** Este proyecto usa la DSM API primero para crear calendarios visibles:
+
+```python
+from ics_sync.dsm_client import DSMSession, dsm_ensure_calendars
+
+dsm = DSMSession(base_url, username, password, verify_ssl, log)
+dsm_ensure_calendars(dsm, ["Mi Calendario"], log)
+```
+
+Ver [wiki](https://github.com/Zoimback/Suscripcion_Synology_Calendar/wiki) para más detalles.
+
+## 🧪 Testing
+
 ```bash
-crontab -e
-# Añadir línea:
-*/15 * * * * cd /ruta/al/proyecto && /ruta/al/venv/bin/python main.py
+# Ejecutar todos los tests
+pytest
+
+# Con coverage
+pytest --cov=ics_sync --cov-report=html
+
+# Tests específicos
+pytest tests/unit/test_grouping.py -v
 ```
 
-**Docker (opcional):**
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY main.py .
-CMD ["python", "-u", "main.py"]
-```
+## 📋 Requisitos
 
-## 📊 Salida esperada
+- Python 3.10+
+- Synology DSM 7.0+ con Calendar package
+- CalDAV habilitado (Control Panel → Application Privileges)
+- Red accesible (puerto 5001 por defecto)
 
-```
-============================================================
-🚀 Iniciando sincronización - 2026-02-25 11:49:12
-============================================================
+### Dependencias Python
 
-🔄 Sincronizando calendario: Universidad
-📋 Usando calendario existente: Universidad
-📊 Eventos existentes: 4
-⏭️  Eventos pasados omitidos: 2
-📥 Eventos futuros a sincronizar: 8
-✅ Completado: 3 añadidos, 5 actualizados
+- `caldav>=1.3.9` - Cliente CalDAV
+- `icalendar>=5.0.12` - Parser ICS/iCal
+- `requests>=2.31.0` - HTTP client
 
-============================================================
-✨ Sincronización completada
-============================================================
-```
+## 🛠️ Herramientas Incluidas
 
-## 🔧 Solución de problemas
+### `delete_calendars.py`
 
-### Error: 405 Method Not Allowed
-- Verifica que el calendario destino exista en Synology
-- Comprueba permisos de escritura del usuario CalDAV
-- Revisa la URL CalDAV (debe incluir `/caldav/`)
+Gestiona calendarios via DSM API:
 
-### Error: No module named 'caldav'
 ```bash
-pip install -r requirements.txt
+# Listar calendarios
+python delete_calendars.py --list
+
+# Eliminar calendarios específicos
+python delete_calendars.py --delete "Calendario 1" "Calendario 2"
+
+# Dry-run
+python delete_calendars.py --delete "Test" --dry-run
 ```
 
-### Eventos no se actualizan
-- Verifica que las URLs ICS sean accesibles
-- Comprueba credenciales en `events.json`
-- Revisa logs para errores específicos
+## 📚 Documentación
 
-### Zona horaria incorrecta
-- El script convierte automáticamente a Europe/Madrid
-- Puedes modificar `pytz.timezone('Europe/Madrid')` en el código
+Ver [Wiki](https://github.com/Zoimback/Suscripcion_Synology_Calendar/wiki) para:
 
-## 🗂️ Estructura del proyecto
+- Guía de instalación en Synology NAS
+- Configuración de tareas programadas
+- Troubleshooting de problemas comunes
+- Arquitectura interna del proyecto
+- Solución a calendarios invisibles
 
-```
-Suscripcion_Synology_Calendar/
-├── main.py              # Script principal
-├── events.json          # Configuración (no versionado)
-├── events.json.example  # Plantilla de configuración
-├── requirements.txt     # Dependencias
-├── .gitignore          # Archivos ignorados
-├── README.md           # Este archivo
-└── CONTRIBUTING.md     # Guía de contribución
-```
+## 🐛 Problemas Conocidos
 
-## 📚 Fuentes de calendarios ICS
+### Calendarios Invisibles
 
-Ejemplos de calendarios públicos ICS:
+**Síntoma:** Calendarios aparecen en CalDAV pero no en DSM UI.
 
-- **Google Calendar**: Configuración → Integrar calendario → Dirección secreta en formato iCal
-- **Fórmula 1**: `https://files-f1.motorsportcalendars.com/es/f1-calendar_qualifying_sprint_gp.ics`
-- **Deportes**: [MotorsportCalendars](https://www.motorsportcalendars.com/)
-- **Festivos**: Busca "calendario festivos ICS [país]"
+**Causa:** Creados con `caldav.make_calendar()` en lugar de DSM API.
+
+**Solución:** Ver [Calendarios Invisibles](https://github.com/Zoimback/Suscripcion_Synology_Calendar/wiki/Calendarios-Invisibles) en la wiki.
+
+### Error 117 al Eliminar
+
+**Síntoma:** DSM API devuelve error 117 al eliminar calendarios.
+
+**Causa:** Calendarios con UUID (no registrados en DSM).
+
+**Solución:** Eliminación directa en PostgreSQL (ver wiki).
 
 ## 🤝 Contribuir
 
-Lee [CONTRIBUTING.md](CONTRIBUTING.md) para conocer cómo contribuir al proyecto.
+¡Las contribuciones son bienvenidas! Por favor:
 
-## 📝 Licencia
+1. Fork el proyecto
+2. Crea una feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add: AmazingFeature'`)
+4. Push a la branch (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-Este proyecto es de código abierto. Consulta el archivo LICENSE para más detalles.
+### Estilo de Código
+
+Usamos `ruff` para linting y formateo:
+
+```bash
+# Verificar estilo
+ruff check ics_sync/
+
+# Auto-format
+ruff format ics_sync/
+```
+
+## 📄 Licencia
+
+MIT License - ver [LICENSE](LICENSE) para detalles.
 
 ## 🙏 Agradecimientos
 
-- [caldav](https://github.com/python-caldav/caldav) - Librería CalDAV
-- [icalendar](https://github.com/collective/icalendar) - Parser de iCalendar
-- [pytz](https://pypi.org/project/pytz/) - Zonas horarias
+- [python-caldav](https://github.com/python-caldav/caldav) - Cliente CalDAV
+- [icalendar](https://github.com/collective/icalendar) - Parser RFC 5545
+- Comunidad Synology por la documentación de DSM API
 
-## 📧 Contacto
+## 📞 Soporte
 
-- **GitHub**: [@Zoimback](https://github.com/Zoimback)
-- **Issues**: [Reportar problema](https://github.com/Zoimback/Suscripcion_Synology_Calendar/issues)
+- 🐛 [Issues](https://github.com/Zoimback/Suscripcion_Synology_Calendar/issues)
+- 💬 [Discussions](https://github.com/Zoimback/Suscripcion_Synology_Calendar/discussions)
+- 📧 Email: rgalexmv@gmail.com
 
 ---
 
-⭐ Si este proyecto te resulta útil, ¡dale una estrella en GitHub!
+**⚠️ Nota de Seguridad:** Nunca subas tu `config.json` con credenciales reales al repositorio. Usa variables de entorno o archivos .gitignore.
