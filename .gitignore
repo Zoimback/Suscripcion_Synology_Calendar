@@ -1,64 +1,12 @@
-# Config con credenciales
-config.json
-
-# Python
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-PIPFILE.lock
-
-# Virtual environments
-.venv/
-.venv-linux/
-venv/
-ENV/
-env/
-
-# Testing
+dist/
+build/
 .pytest_cache/
 .coverage
-htmlcov/
-.tox/
-.nox/
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Logs
+.venv/
+venv/
+config.json
 *.log
-sync.log
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Temporary scripts
-_check_*.py
-_delete_*.py
-find_invisible*.sh
-
-# Docs build
-docs/_build/

@@ -1,0 +1,16 @@
+{
+  "caldav": {
+    "url": "https://your-nas.example.com:5001/caldav/username/",
+    "username": "your_username",
+    "password": "your_password_or_app_password",
+    "verify_ssl": true
+  },
+  "sources": [
+    {
+      "url": "https://example.com/calendar.ics",
+      "calendar_name": "My Calendar",
+      "delete_removed_events": true
+    }
+  ],
+  "log_file": "sync.log"
+}
